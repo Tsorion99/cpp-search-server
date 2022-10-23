@@ -75,27 +75,10 @@ public:
         documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
     }
     
-    vector<Document> FindTopDocuments(const string& raw_query, DocumentStatus status = DocumentStatus::ACTUAL) const {
-        switch (status) {
-            case DocumentStatus::ACTUAL:
-                return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) {
-                                          return status == DocumentStatus::ACTUAL;
+    vector<Document> FindTopDocuments(const string& raw_query, DocumentStatus doc_status = DocumentStatus::ACTUAL) const {
+        return FindTopDocuments(raw_query, [doc_status](int document_id, DocumentStatus status, int rating) {
+                                          return status == doc_status;
                                       });
-            case DocumentStatus::IRRELEVANT:
-                return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) {
-                                          return status == DocumentStatus::IRRELEVANT;
-                                      });
-            case DocumentStatus::BANNED:
-                return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) {
-                                          return status == DocumentStatus::BANNED;
-                                      });
-            case DocumentStatus::REMOVED:
-                return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) {
-                                          return status == DocumentStatus::REMOVED;
-                                      });
-            default:
-                return {};
-        }
     }
     
     template <typename DocumentPredicate>
