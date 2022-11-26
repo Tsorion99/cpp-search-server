@@ -96,7 +96,7 @@ public:
         if (document_id < 0) {
             throw invalid_argument("Попытка добавить документ с отрицательным id"s);
         }
-        else if (documents_.count(document_id) > 0) {
+        if (documents_.count(document_id) > 0) {
             throw invalid_argument("Попытка добавить документ c id ранее добавленного документа"s);
         }
         IsValidWord(document);
