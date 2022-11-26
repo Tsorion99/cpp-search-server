@@ -93,29 +93,27 @@ public:
 
     void AddDocument(int document_id, const string& document, DocumentStatus status,
                      const vector<int>& ratings) {
-        if (document_id > -1 && documents_.count(document_id) == 0) {
-            IsValidWord(document);
-            const vector<string> words = SplitIntoWordsNoStop(document);
-            const double inv_word_count = 1.0 / words.size();
-            for (const string& word : words) {
-                word_to_document_freqs_[word][document_id] += inv_word_count;
-            }
-            documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
-            documents_id_.push_back(document_id);
-        }
-        else if (document_id < 0) {
+        if (document_id < 0) {
             throw invalid_argument("Попытка добавить документ с отрицательным id"s);
         }
-        else {
+        else if (documents_.count(document_id) > 0) {
             throw invalid_argument("Попытка добавить документ c id ранее добавленного документа"s);
         }
+        IsValidWord(document);
+        const vector<string> words = SplitIntoWordsNoStop(document);
+        const double inv_word_count = 1.0 / words.size();
+        for (const string& word : words) {
+            word_to_document_freqs_[word][document_id] += inv_word_count;
+        }
+        documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
+        documents_id_.push_back(document_id);
     }
 
     template <typename DocumentPredicate>
     vector<Document> FindTopDocuments(const string& raw_query,
                                       DocumentPredicate document_predicate) const {
-        IsValidQuery(raw_query);
         const Query query = ParseQuery(raw_query);
+        IsValidWord(raw_query);
         vector<Document> result = FindAllDocuments(query, document_predicate);
 
         sort(result.begin(), result.end(),
@@ -149,8 +147,8 @@ public:
 
     tuple<vector<string>, DocumentStatus> MatchDocument(const string& raw_query,
                                                         int document_id) const {
-        IsValidQuery(raw_query);
         const Query query = ParseQuery(raw_query);
+        IsValidWord(raw_query);
         vector<string> matched_words;
         for (const string& word : query.plus_words) {
             if (word_to_document_freqs_.count(word) == 0) {
@@ -198,16 +196,6 @@ private:
         }
     }
     
-    static void IsValidQuery(const string& raw_query) {
-        for (size_t i = 0; i < raw_query.size(); ++i) {
-            if ((raw_query[i] == '-' && raw_query[i + 1] == '-') || (raw_query[i] == '-' && raw_query[i + 1] == '\0')) {
-                throw invalid_argument("Наличие более чем одного минуса перед словом или отсутствие\
-текста после символа «минус»"s);
-            }
-        }
-        IsValidWord(raw_query);
-    }
-    
     bool IsStopWord(const string& word) const {
         return stop_words_.count(word) > 0;
     }
@@ -244,6 +232,10 @@ private:
         if (text[0] == '-') {
             is_minus = true;
             text = text.substr(1);
+        }
+        if (text[0] == '-' || text[0] == '\0') {
+            throw invalid_argument("Наличие более чем одного минуса перед словом или отсутствие\
+текста после символа «минус»"s);
         }
         return {text, is_minus, IsStopWord(text)};
     }
