@@ -4,8 +4,16 @@
 
 SearchServer::SearchServer(const std::string& stop_words_text)
     : SearchServer(
-        SplitIntoWords(stop_words_text))
+      SplitIntoWords(stop_words_text))
 {
+}
+
+std::set<int>::iterator SearchServer::begin() {
+    return document_ids_.begin();
+}
+
+std::set<int>::iterator SearchServer::end() {
+    return document_ids_.end();
 }
 
 void SearchServer::AddDocument(int document_id, const std::string& document, DocumentStatus status,
@@ -20,9 +28,10 @@ void SearchServer::AddDocument(int document_id, const std::string& document, Doc
     const double inv_word_count = 1.0 / words.size();
     for (const string& word : words) {
         word_to_document_freqs_[word][document_id] += inv_word_count;
+        document_to_word_freqs_[document_id][word] += inv_word_count;
     }
     documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
-    document_ids_.push_back(document_id);
+    document_ids_.insert(document_id);
 }
 
 std::vector<Document> SearchServer::FindTopDocuments(const std::string& raw_query, DocumentStatus status) const {
@@ -40,12 +49,10 @@ int SearchServer::GetDocumentCount() const {
     return documents_.size();
 }
 
-int SearchServer::GetDocumentId(int index) const {
-    return document_ids_.at(index);
-}
-
 std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument(const std::string& raw_query,
                                                    int document_id) const {
+    //LOG_DURATION_STREAM("Operation time", std::cout);
+
     const auto query = ParseQuery(raw_query);
 
     std::vector<std::string> matched_words;
@@ -67,6 +74,62 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
         }
     }
     return {matched_words, documents_.at(document_id).status};
+}
+
+/*! \fn SearchServer::GetWordFrequencies
+ *  \b Компонента  \b : Поисковой сервер \n
+ *  \b Назначение  \b : Получение частот слов по идентификатору документа \n
+ *  \b Ограничения \b : Нет \n
+ *  \param[in] document_id идентификатор документа
+ *  \return map, где ключ - слово, значение - частота
+ *  если документа с идентификатором document_id не существует, то пустой словарь
+ */
+const std::map<std::string, double>& SearchServer::GetWordFrequencies(int document_id) const
+{
+    static const std::map<std::string, double> empty_result;
+
+    auto iterator = document_to_word_freqs_.find(document_id);
+    return iterator != document_to_word_freqs_.end() ? document_to_word_freqs_.at(document_id) :
+        empty_result;
+}
+
+/*! \fn SearchServer::RemoveDocument
+ *  \b Компонента  \b : Поисковой сервер \n
+ *  \b Назначение  \b : Удаление документа \n
+ *  \b Ограничения \b : Нет \n
+ *  \param[in] document_id идентификатор документа
+ *  \return Нет
+ */
+void SearchServer::RemoveDocument(int document_id) {
+    {
+        auto iterator = document_ids_.find(document_id);
+        if (iterator == document_ids_.end()) {
+            return ;
+        }
+    }
+
+    for (const auto& [word, frequency] : document_to_word_freqs_.at(document_id)) {
+        std::map<int, double>& internal_map = word_to_document_freqs_.at(word);
+        internal_map.erase(document_id);
+        if (internal_map.empty()) {
+            word_to_document_freqs_.erase(word);
+        }
+    }
+
+    {
+        auto iterator = document_to_word_freqs_.find(document_id);
+        document_to_word_freqs_.erase(iterator);
+    }
+
+    {
+        auto iterator = documents_.find(document_id);
+        documents_.erase(iterator);
+    }
+
+    {
+        auto iterator = document_ids_.find(document_id);
+        document_ids_.erase(iterator);
+    }
 }
 
 bool SearchServer::IsStopWord(const std::string& word) const {
