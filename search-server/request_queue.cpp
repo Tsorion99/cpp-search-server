@@ -34,10 +34,10 @@ void RequestQueue::AddRequest(bool response_is_empty) {
         ++count_requests_;
     }
     if (response_is_empty) {
-        requests_.push_back({true});
+        requests_.push_back({ true });
         ++count_empty_requests_;
     }
     else {
-        requests_.push_back({false});
+        requests_.push_back({ false });
     }
 }

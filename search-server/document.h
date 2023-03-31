@@ -19,4 +19,4 @@ enum class DocumentStatus {
     REMOVED,
 };
 
-std::ostream& operator<<(std::ostream &os, const Document &document);
+std::ostream& operator<<(std::ostream& os, const Document& document);

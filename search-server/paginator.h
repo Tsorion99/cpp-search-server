@@ -7,11 +7,11 @@ template <typename Iterator>
 class IteratorRange {
 public:
     explicit IteratorRange(const Iterator range_begin,
-                           const Iterator range_end,
-                           const size_t size)
+        const Iterator range_end,
+        const size_t size)
         : begin_(range_begin),
-          end_(range_end),
-          size_(size)
+        end_(range_end),
+        size_(size)
     {
     }
 
@@ -34,7 +34,7 @@ private:
 };
 
 template <typename Iterator>
-std::ostream& operator<<(std::ostream &os, const IteratorRange<Iterator> &i_r) {
+std::ostream& operator<<(std::ostream& os, const IteratorRange<Iterator>& i_r) {
     auto it = i_r.begin();
 
     while (it != i_r.end()) {
@@ -66,15 +66,15 @@ public:
             i += shift;
         }
     }
-    
+
     auto begin() const {
         return pages_.begin();
     }
- 
+
     auto end() const {
         return pages_.end();
     }
- 
+
     auto size() const {
         return pages_.size();
     }
