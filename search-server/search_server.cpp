@@ -190,21 +190,9 @@ void SearchServer::RemoveDocument(int document_id) {
     for (const auto& [word, frequency] : document_to_word_freqs_.at(document_id)) {
         word_to_document_freqs_.at(word).erase(document_id);
     }
-
-    {
-        auto iterator = document_to_word_freqs_.find(document_id);
-        document_to_word_freqs_.erase(iterator);
-    }
-
-    {
-        auto iterator = documents_.find(document_id);
-        documents_.erase(iterator);
-    }
-
-    {
-        auto iterator = document_ids_.find(document_id);
-        document_ids_.erase(iterator);
-    }
+    document_to_word_freqs_.erase(document_id);
+    documents_.erase(document_id);
+    document_ids_.erase(document_id);
 }
 
 /*! \fn SearchServer::RemoveDocument

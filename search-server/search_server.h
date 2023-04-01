@@ -148,12 +148,14 @@ std::vector<Document> SearchServer::FindTopDocuments(const ExecutionPolicy& poli
                                                      const std::string_view raw_query,
                                                      DocumentPredicate document_predicate) const
 {
+    static const double EPS = 1e-6;
+
     const Query query = ParseQuery(raw_query);
     std::vector<Document> matched_documents = FindAllDocuments(policy, query, document_predicate);
 
     sort(matched_documents.begin(), matched_documents.end(),
         [](const Document& lhs, const Document& rhs) {
-            if (std::abs(lhs.relevance - rhs.relevance) < 1e-6) {
+            if (std::abs(lhs.relevance - rhs.relevance) < EPS) {
                 return lhs.rating > rhs.rating;
             }
             return lhs.relevance > rhs.relevance;
@@ -214,9 +216,9 @@ std::vector<Document> SearchServer::FindAllDocuments(const std::execution::paral
                                                      const Query& query,
                                                      DocumentPredicate document_predicate) const
 {
-    static const size_t BUCKET_COUNT = 8;
-    ConcurrentMap<int, double> document_to_relevance(BUCKET_COUNT);
+    static const size_t BUCKET_COUNT = 10;
 
+    ConcurrentMap<int, double> document_to_relevance(BUCKET_COUNT);
     auto plus_word = [this, &query, document_predicate, &document_to_relevance](std::string_view word) {
         if (word_to_document_freqs_.count(word) == 0) {
             return;
